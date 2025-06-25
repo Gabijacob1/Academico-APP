@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adicionar plano de aula</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <main class="dashboard-container">
+    <section class="welcome">
+      <h1>Plano de Aula</h1>
+      <p>Crie e consulte seus planos de aula.</p>
+    </section>
+
+    <!-- Formulário de Criação -->
+    <section class="formulario-plano">
+      <h2>Criar Plano</h2>
+      <form id="formPlano">
+        <label for="data">Data:</label>
+        <input type="date" id="data" required />
+
+        <label for="turma">Turma:</label>
+        <select id="turma" required>
+          <option value="" disabled selected>-- Selecione a turma --</option>
+          <option value="Ensino Médio">Ensino Médio</option>
+          <option value="Pré Vestibulinho">Pré Vestibulinho</option>
+          <option value="Pré Vestibular">Pré Vestibular</option>
+          <option value="Empreendedorismo">Empreendedorismo</option>
+        </select>
+
+        <label for="tema">Tema:</label>
+        <input type="text" id="tema" required />
+
+        <label for="objetivos">Objetivos:</label>
+        <textarea id="objetivos" rows="3" required></textarea>
+
+        <label for="atividades">Atividades:</label>
+        <textarea id="atividades" rows="3" required></textarea>
+
+        <button type="submit">Salvar Plano</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("formPlano");
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const plano = {
+        data: document.getElementById("data").value,
+        turma: document.getElementById("turma").value,
+        tema: document.getElementById("tema").value,
+        objetivos: document.getElementById("objetivos").value,
+        atividades: document.getElementById("atividades").value
+      };
+
+      const planosSalvos = JSON.parse(localStorage.getItem("planos")) || [];
+      planosSalvos.push(plano);
+      localStorage.setItem("planos", JSON.stringify(planosSalvos));
+
+      window.location.href = "plano_professor.html";
+    });
+  </script>
+</body>
+</html>

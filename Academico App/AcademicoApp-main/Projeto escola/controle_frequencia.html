@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Controle de Frequência</title>
+  <link rel="stylesheet" href="controle_frequencia.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Acadêmico App 🌿</div>
+    <div class="menu-toggle" id="menuToggle">&#9776;</div>
+    <div class="menu" id="menu">
+      <ul>
+        <li><a href="professor.html">Inicio</a></li>
+      </ul>
+    </div>
+  </nav>
+<main class="dashboard-container">
+  <section>
+    <h1>Registro de Frequência</h1>
+
+    <form id="formCursoPlano">
+      <label for="cursoSelect">Selecione o curso:</label>
+      <select id="cursoSelect" required>
+        <option value="" disabled selected>-- Escolha o curso --</option>
+        <option value="Ensino Médio">Ensino Médio</option>
+        <option value="Pré Vestibulinho">Pré Vestibulinho</option>
+        <option value="Pré Vestibular">Pré Vestibular</option>
+        <option value="Empreendedorismo">Empreendedorismo</option>
+      </select>
+
+      <label for="planoSelect">Selecione o plano de aula:</label>
+      <select id="planoSelect" required disabled>
+        <option value="" disabled selected>-- Escolha o plano --</option>
+      </select>
+    </form>
+
+    <!-- Info adicional do plano (pode puxar de adicionar_plano) -->
+    <div id="infoPlano" style="margin-top: 1rem; font-style: italic; color: #6d5b4a; min-height: 3rem;">
+      <!-- Aqui pode aparecer o tema, data, objetivo... -->
+    </div>
+
+    <form id="formFrequencia" class="hidden" style="margin-top: 1rem;">
+      <h2>Marque a presença dos alunos</h2>
+      <table>
+        <thead>
+          <tr><th>Aluno</th><th>Presente</th></tr>
+        </thead>
+        <tbody id="listaAlunos"></tbody>
+      </table>
+
+      <button type="submit">Salvar Presença</button>
+    </form>
+
+    <div id="comentarioContainer" class="hidden" style="margin-top: 1.5rem;">
+      <label for="comentario">Comentários sobre a aula:</label><br/>
+      <textarea id="comentario" rows="4" placeholder="Ex: Conseguimos avançar bastante no plano de aula..."></textarea>
+      <button id="btnSalvarComentario" style="margin-top: 0.5rem;">Salvar Comentário</button>
+      <div id="msgComentario"></div>
+    </div>
+
+    <p id="msgSalvar"></p>
+  </section>
+</main>
+
+<script>
+  const menuToggle = document.getElementById('menuToggle');
+  const menu = document.getElementById('menu');
+  menuToggle.addEventListener('click', () => {
+    menu.classList.toggle('active');
+  });
+
+  const cursoSelect = document.getElementById('cursoSelect');
+  const planoSelect = document.getElementById('planoSelect');
+  const formFrequencia = document.getElementById('formFrequencia');
+  const listaAlunos = document.getElementById('listaAlunos');
+  const msgSalvar = document.getElementById('msgSalvar');
+
+  const comentarioContainer = document.getElementById('comentarioContainer');
+  const comentario = document.getElementById('comentario');
+  const btnSalvarComentario = document.getElementById('btnSalvarComentario');
+  const msgComentario = document.getElementById('msgComentario');
+
+  const infoPlano = document.getElementById('infoPlano');
+
+  const alunos = [
+    "Ana Silva", "Bruno Souza", "Carla Dias", "Diego Lima", "Elisa Fernandes",
+    "Fábio Oliveira", "Gisele Martins", "Hugo Costa", "Isabela Rocha", "João Pedro",
+    "Karina Almeida", "Lucas Moreira", "Mariana Pinto", "Nicolas Santos", "Olívia Ramos"
+  ];
+
+  cursoSelect.addEventListener('change', () => {
+    const curso = cursoSelect.value;
+    if (!curso) {
+      planoSelect.innerHTML = '<option value="" disabled selected>-- Escolha o plano --</option>';
+      planoSelect.disabled = true;
+      formFrequencia.classList.add('hidden');
+      comentarioContainer.classList.add('hidden');
+      infoPlano.textContent = '';
+      msgSalvar.textContent = '';
+      return;
+    }
+
+    // Pega os planos salvos no localStorage
+    const planosSalvos = JSON.parse(localStorage.getItem("planos")) || [];
+
+    // Filtra os planos da turma/curso selecionado
+    const planosFiltrados = planosSalvos.filter(plano => plano.turma === curso);
+
+    planoSelect.innerHTML = '<option value="" disabled selected>-- Escolha o plano --</option>';
+
+    planosFiltrados.forEach(plano => {
+      const option = document.createElement('option');
+      option.value = plano.tema;  // Só o título (tema)
+      option.textContent = plano.tema;
+      planoSelect.appendChild(option);
+    });
+
+    planoSelect.disabled = planosFiltrados.length === 0;
+    formFrequencia.classList.add('hidden');
+    comentarioContainer.classList.add('hidden');
+    infoPlano.textContent = '';
+    msgSalvar.textContent = '';
+  });
+
+  planoSelect.addEventListener('change', () => {
+    const curso = cursoSelect.value;
+    const plano = planoSelect.value;
+    if (!curso || !plano) {
+      formFrequencia.classList.add('hidden');
+      comentarioContainer.classList.add('hidden');
+      infoPlano.textContent = '';
+      msgSalvar.textContent = '';
+      return;
+    }
+
+    // Busca o plano completo para mostrar informações
+    const planosSalvos = JSON.parse(localStorage.getItem("planos")) || [];
+    const planoSelecionado = planosSalvos.find(p => p.tema === plano && p.turma === curso);
+
+    if(planoSelecionado){
+      infoPlano.innerHTML = `
+        <strong>Data:</strong> ${planoSelecionado.data || 'N/D'}<br>
+        <strong>Objetivo:</strong> ${planoSelecionado.objetivos || 'N/D'}
+      `;
+    } else {
+      infoPlano.textContent = '';
+    }
+
+    const chave = `frequencia_${curso}_${plano}`;
+    const dados = JSON.parse(localStorage.getItem(chave)) || {};
+
+    listaAlunos.innerHTML = '';
+    alunos.forEach(aluno => {
+      const tr = document.createElement('tr');
+      const tdNome = document.createElement('td');
+      tdNome.textContent = aluno;
+
+      const tdCheckbox = document.createElement('td');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.name = 'presenca';
+      checkbox.value = aluno;
+      checkbox.checked = dados.presencas?.[aluno] ?? true;
+
+      tdCheckbox.appendChild(checkbox);
+      tr.appendChild(tdNome);
+      tr.appendChild(tdCheckbox);
+      listaAlunos.appendChild(tr);
+    });
+
+    comentario.value = dados.comentario || '';
+    comentarioContainer.classList.remove('hidden');
+    formFrequencia.classList.remove('hidden');
+    msgComentario.textContent = '';
+    msgSalvar.textContent = '';
+  });
+
+  formFrequencia.addEventListener('submit', e => {
+    e.preventDefault();
+
+    const curso = cursoSelect.value;
+    const plano = planoSelect.value;
+    const chave = `frequencia_${curso}_${plano}`;
+
+    const presencas = {};
+    listaAlunos.querySelectorAll('input[name="presenca"]').forEach(cb => {
+      presencas[cb.value] = cb.checked;
+    });
+
+    const dados = {
+      presencas,
+      comentario: comentario.value.trim()
+    };
+
+    localStorage.setItem(chave, JSON.stringify(dados));
+
+    msgSalvar.textContent = "Presença salva com sucesso!";
+    msgComentario.textContent = "Comentário também foi salvo.";
+  });
+
+  btnSalvarComentario.addEventListener('click', () => {
+    const curso = cursoSelect.value;
+    const plano = planoSelect.value;
+    const chave = `frequencia_${curso}_${plano}`;
+    const dados = JSON.parse(localStorage.getItem(chave)) || {};
+
+    dados.comentario = comentario.value.trim();
+
+    localStorage.setItem(chave, JSON.stringify(dados));
+    msgComentario.textContent = "Comentário salvo com sucesso!";
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adicionar matrículas</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">Acadêmico App 🌿</div>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="secretaria.html">Início</a></li>
+        <li><a href="login.html">Sair</a></li>
+      </ul>
+    </nav>
+    <div class="menu-toggle" id="menu-toggle">&#9776;</div>
+  </header>
+
+  <main>
+    <h1>Criar Login</h1>
+   <form id="formMatricula">
+  <!-- Campos do formulário -->
+   <label for="tipo">Tipo de acesso</label>
+   <select name="tipo" id="tipo">
+    <option value="">Selecione...</option>
+    <option value="Secretaria">Secretaria</option>
+    <option value="Aluno">Aluno</option>
+    <option value="Professor">Professor</option>
+   </select>
+   
+
+  <label for="nome">Nome:</label>
+  <input type="text" id="nome" name="nome" required />
+
+  <label for="email">E-mail:</label>
+  <input type="email" id="email" name="email" required />
+
+  <label for="senha">Senha:</label>
+  <input type="password" id="senha" name="senha" required />
+
+  <label for="telefone">Telefone:</label>
+  <input type="tel" id="telefone" name="telefone" required />
+
+  <button type="submit">Cadastrar</button>
+</form>
+
+
+<script>
+document.getElementById('formMatricula').addEventListener('submit', e => {
+  e.preventDefault();
+
+  const novoUsuario = {
+    tipo    : document.getElementById('tipo').value.toLowerCase(),
+    nome     : document.getElementById('nome').value,
+    email    : document.getElementById('email').value.trim().toLowerCase(),
+    senha    : document.getElementById('senha').value,
+    telefone : document.getElementById('telefone').value
+  };
+
+  if (!novoUsuario.tipo) {
+    alert('Escolha o tipo de acesso.');
+    return;
+  }
+
+  const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+  if (usuarios.some(u => u.email === novoUsuario.email && u.tipo === novoUsuario.tipo)) {
+    alert('Já existe usuário com este e-mail e tipo.');
+    return;
+  }
+  usuarios.push(novoUsuario);
+  localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+
+  const alunos = JSON.parse(localStorage.getItem('alunos')) || [];
+  alunos.push(novoUsuario);
+  localStorage.setItem('alunos', JSON.stringify(alunos));
+
+  alert('Usuário cadastrado com sucesso!');
+  window.location.href = 'matricula.html';
+});
+</script>
+
+</body>
+</html> 

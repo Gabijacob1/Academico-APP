@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Editar Matrícula - Aluno</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="adicionar-avisos.css" />
+</head>
+
+<body>
+  <header class="navbar">
+    <div class="logo">Acadêmico App 🌿</div>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="secretaria.html">Início</a></li>
+      </ul>
+    </nav>
+    <div class="menu-toggle" id="menu-toggle">&#9776;</div>
+  </header>
+
+  <main>
+    <h1>Editar Matrícula do Aluno</h1>
+
+    <form id="formEditarMatricula">
+      <label for="nome">Nome:</label>
+      <input type="text" id="nome" required />
+
+      <label for="curso">Curso:</label>
+      <input type="text" id="curso" required />
+
+      <label for="periodo">Período:</label>
+      <input type="text" id="periodo" required />
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" required />
+
+      <label for="telefone">Telefone:</label>
+      <input type="text" id="telefone" required />
+
+      <label for="endereco">Endereço:</label>
+      <input type="text" id="endereco" required />
+
+
+      <button type="submit">Salvar Alterações</button>
+    </form>
+  </main>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('formEditarMatricula');
+      const matriculaEditando = JSON.parse(localStorage.getItem('matriculaEditando'));
+
+      if (!matriculaEditando) {
+        alert('Nenhum aluno selecionado para edição.');
+        window.location.href = 'matricula-aluno.html';
+        return;
+      }
+
+      const { matricula, index } = matriculaEditando;
+
+      document.getElementById('nome').value = matricula.nome || '';
+      document.getElementById('curso').value = matricula.curso || '';
+      document.getElementById('periodo').value = matricula.periodo || '';
+      document.getElementById('email').value = matricula.email || '';
+      document.getElementById('telefone').value = matricula.telefone || '';
+      document.getElementById('endereco').value = matricula.endereco || '';
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const atualizados = {
+          nome: document.getElementById('nome').value.trim(),
+          curso: document.getElementById('curso').value.trim(),
+          periodo: document.getElementById('periodo').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          telefone: document.getElementById('telefone').value.trim(),
+          endereco: document.getElementById('endereco').value.trim(),
+          documentos: matricula.documentos || []
+        };
+
+        const matriculas = JSON.parse(localStorage.getItem('matriculas')) || [];
+        matriculas[index] = atualizados;
+
+        localStorage.setItem('matriculas', JSON.stringify(matriculas));
+        localStorage.removeItem('matriculaEditando');
+
+        window.location.href = 'matricula-alunos.html';
+      });
+    });
+  </script>
+</body>
+</html>
