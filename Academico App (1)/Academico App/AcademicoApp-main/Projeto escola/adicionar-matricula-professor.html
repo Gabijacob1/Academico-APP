@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadastro de Professores</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    /* Estilos básicos para documentos listados */
+    .documento { margin-bottom: 8px; }
+    .documento-nome { margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">Acadêmico App 🌿</div>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="secretaria.html">Início</a></li>
+        <li><a href="login.html">Sair</a></li>
+      </ul>
+    </nav>
+    <div class="menu-toggle" id="menu-toggle">&#9776;</div>
+  </header>
+
+  <main>
+    <h1>Cadastro de Professores</h1>
+    <form id="formularioMatricula">
+      <label for="nome">Nome:</label>
+      <input type="text" id="nome" name="nome" required />
+
+      <label for="disciplina">Disciplina:</label>
+      <input type="text" id="disciplina" name="disciplina" required />
+
+      <label>Disponibilidades:</label>
+      <div id="disponibilidades-container"></div>
+      <button type="button" onclick="adicionarDisponibilidade()">Adicionar Disponibilidade</button>
+
+      <label for="email">E-mail:</label>
+      <input type="email" id="email" name="email" required />
+
+      <label for="telefone">Telefone:</label>
+      <input type="tel" id="telefone" name="telefone" required />
+
+      <label for="endereco">Endereço</label>
+      <input type="text" id="endereco" name="endereco" required />
+
+      <label>Documentos:</label>
+      <div id="documentos-container"></div>
+      <button type="button" onclick="document.getElementById('inputDocumento').click()">Adicionar Documento</button>
+      <input type="file" id="inputDocumento" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none" multiple />
+
+      <br><br>
+      <button type="submit">Cadastrar</button>
+    </form>
+  </main>
+
+  <script>
+    /* ---------- VARIÁVEIS GLOBAIS ---------- */
+    const documentosContainer = document.getElementById('documentos-container');
+    const inputDocumento       = document.getElementById('inputDocumento');
+    let   listaDocumentos      = []; // <File> objects
+
+    /* ---------- MANIPULAÇÃO DE DOCUMENTOS ---------- */
+    inputDocumento.addEventListener('change', () => {
+      for (const file of inputDocumento.files) {
+        if (!listaDocumentos.some(doc => doc.name === file.name)) {
+          listaDocumentos.push(file);
+          adicionarDocumentoNaLista(file);
+        }
+      }
+      inputDocumento.value = '';// permite re‑upload de mesmo arquivo depois
+    });
+
+    function adicionarDocumentoNaLista (file) {
+      const div = document.createElement('div');
+      div.classList.add('documento');
+
+      const nomeSpan = document.createElement('span');
+      nomeSpan.classList.add('documento-nome');
+      nomeSpan.textContent = file.name;
+
+      const btnRemover = document.createElement('button');
+      btnRemover.type = 'button';
+      btnRemover.textContent = 'Remover';
+      btnRemover.onclick = () => {
+        listaDocumentos = listaDocumentos.filter(doc => doc.name !== file.name);
+        div.remove();
+      };
+
+      div.appendChild(nomeSpan);
+      div.appendChild(btnRemover);
+      documentosContainer.appendChild(div);
+    }
+
+    /* ---------- DISPONIBILIDADES ---------- */
+    function adicionarDisponibilidade() {
+      const container = document.getElementById('disponibilidades-container');
+      const div = document.createElement('div');
+      div.classList.add('disponibilidade-item');
+
+      div.innerHTML = `
+        <select name="dias[]" required>
+          <option value="">Dia...</option>
+          <option>Segunda</option>
+          <option>Terça</option>
+          <option>Quarta</option>
+          <option>Quinta</option>
+          <option>Sexta</option>
+        </select>
+        <select name="horarios[]" required>
+          <option value="">Hora...</option>
+          ${[8,9,10,11,13,14,15,16,17,18,19,20,21].map(h=>`<option>${h.toString().padStart(2,'0')}:00</option>`).join('')}
+        </select>
+        <button type="button" onclick="removerDisponibilidade(this)">Remover</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function removerDisponibilidade(btn){ btn.parentElement.remove(); }
+
+    /* ---------- FUNÇÕES DE APOIO ---------- */
+    function lerArquivoComoBase64(file){
+      return new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result); // DataURL (base64 com prefixo type)
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* ---------- SUBMISSÃO DO FORMULÁRIO ---------- */
+    document.getElementById('formularioMatricula').addEventListener('submit', async function(event){
+      event.preventDefault();
+
+      // 1. Disponibilidades
+      const dias       = document.getElementsByName('dias[]');
+      const horarios   = document.getElementsByName('horarios[]');
+      const disponibs  = [];
+      for (let i=0;i<dias.length;i++) if(dias[i].value && horarios[i].value){
+        disponibs.push({ dia:dias[i].value, horario:horarios[i].value });
+      }
+
+      // 2. Conversão de arquivos para base64
+      const documentosConvertidos = await Promise.all(
+        listaDocumentos.map(async(file)=>({
+          nome:file.name,
+          conteudo:await lerArquivoComoBase64(file) // dataurl base64
+        }))
+      );
+
+      // 3. Monta objeto do novo professor
+      const novoUsuario = {
+        nome:       document.getElementById('nome').value.trim(),
+        disciplina: document.getElementById('disciplina').value.trim(),
+        disponibilidades: disponibs,
+        email:      document.getElementById('email').value.trim().toLowerCase(),
+        telefone:   document.getElementById('telefone').value.trim(),
+        endereco:   document.getElementById('endereco').value.trim(),
+        documentos: documentosConvertidos, // [{nome,conteudo(base64)}]
+        tipo:       'Professor'
+      };
+
+      // 4. Validação simples
+      if(!novoUsuario.nome || !novoUsuario.disciplina || !novoUsuario.email || !novoUsuario.telefone || !novoUsuario.endereco){
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+      }
+
+      // 5. Salva em localStorage
+      const usuarios    = JSON.parse(localStorage.getItem('usuarios'))   || [];
+      const professores = JSON.parse(localStorage.getItem('professores'))|| [];
+      const cadastro    = JSON.parse(localStorage.getItem('cadastro'))   || [];
+
+      if(usuarios.some(u=>u.email===novoUsuario.email && u.tipo===novoUsuario.tipo)){
+        alert('Já existe um usuário com este email e tipo de acesso.');
+        return;
+      }
+
+      usuarios.push({ email:novoUsuario.email, tipo:novoUsuario.tipo, nome:novoUsuario.nome });
+      professores.push(novoUsuario);
+      cadastro.push(novoUsuario);
+
+      localStorage.setItem('usuarios',    JSON.stringify(usuarios));
+      localStorage.setItem('professores', JSON.stringify(professores));
+      localStorage.setItem('cadastro',    JSON.stringify(cadastro));
+
+      alert('Cadastro de professor realizado com sucesso!');
+      window.location.href='matricula-professores.html';
+    });
+  </script>
+</body>
+</html>

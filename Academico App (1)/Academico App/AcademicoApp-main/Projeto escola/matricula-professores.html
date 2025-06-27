@@ -1,0 +1,116 @@
+
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadastro - Professor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="adicionar-avisos.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">Acadêmico App 🌿</div>
+    <nav class="menu" id="menu">
+      <ul><li><a href="secretaria.html">Início</a></li></ul>
+    </nav>
+    <div class="menu-toggle" id="menu-toggle">&#9776;</div>
+  </header>
+
+  <main>
+    <h1>Cadastro de Professores</h1>
+    <input type="text" id="filtroInput" placeholder="Pesquisar por nome, disciplina, email..." aria-label="Filtro de pesquisa" class="campo-pesquisa">
+    <div class="usuario-card-container" id="professorContainer"></div>
+  </main>
+
+  <button class="btn-add" onclick="window.location.href='adicionar-matricula-professor.html'" aria-label="Adicionar cadastro">+</button>
+
+  <script>
+    window.addEventListener('DOMContentLoaded',()=>{
+      /* --------------- VARIÁVEIS --------------- */
+      const container    = document.getElementById('professorContainer');
+      const filtroInput  = document.getElementById('filtroInput');
+      const cadastros    = JSON.parse(localStorage.getItem('cadastro'))||[];
+
+      /* --------------- FUNÇÕES AUX ---------------- */
+      const salvarCadastro = () => localStorage.setItem('cadastro',JSON.stringify(cadastros));
+
+      function criarCard(professor,index){
+        const card = document.createElement('div');
+        card.classList.add('usuario-card');
+
+        /* BOTÕES */
+        const btnDelete = document.createElement('button');
+        btnDelete.classList.add('btn-delete');
+        btnDelete.innerHTML='🗑️';
+        btnDelete.setAttribute('aria-label','Excluir cadastro');
+
+        const btnEdit = document.createElement('button');
+        btnEdit.classList.add('btn-edit');
+        btnEdit.innerHTML='✏️';
+        btnEdit.setAttribute('aria-label','Editar cadastro');
+
+        btnDelete.onclick=()=>{
+          if(confirm(`Deseja excluir o cadastro de ${professor.nome||'professor'}?`)){
+            cadastros.splice(index,1);
+            salvarCadastro();
+            aplicarFiltro(filtroInput.value);
+          }
+        };
+
+        btnEdit.onclick=()=>{
+          localStorage.setItem('cadastroEditando', JSON.stringify({ professor, index }));
+          window.location.href='editar-cadastro.html';
+        };
+
+        /* DOCUMENTOS */
+        let documentosHTML = '<ul>';
+        if(Array.isArray(professor.documentos) && professor.documentos.length){
+          professor.documentos.forEach(doc=>{
+            documentosHTML += `<li><a href="${doc.conteudo}" download="${doc.nome}" target="_blank" rel="noopener">${doc.nome}</a></li>`;
+          });
+        } else {
+          documentosHTML += '<li>Nenhum documento enviado.</li>';
+        }
+        documentosHTML += '</ul>';
+
+        /* DISPONIBILIDADES */
+        const disponibText = Array.isArray(professor.disponibilidades)
+          ? professor.disponibilidades.map(d=>`${d.dia} às ${d.horario}`).join(', ')
+          : (professor.disponibilidades||'Não informada');
+
+        /* HTML CARD */
+        card.innerHTML = `
+          <h2>${professor.nome||'Sem nome'} <span class="tipo">(${professor.tipo||'Professor'})</span></h2>
+          <p><strong>Disciplina:</strong> ${professor.disciplina||'Não informada'}</p>
+          <p><strong>Email:</strong> ${professor.email||'Não informado'}</p>
+          <p><strong>Telefone:</strong> ${professor.telefone||'Não informado'}</p>
+          <p><strong>Endereço:</strong> ${professor.endereco||'Não informado'}</p>
+          <p><strong>Disponibilidade:</strong> ${disponibText}</p>
+          <p><strong>Documentos:</strong> ${documentosHTML}</p>
+        `;
+
+        card.append(btnEdit,btnDelete);
+        container.appendChild(card);
+      }
+
+      /* --------------- FILTRO ---------------- */
+      function aplicarFiltro(filtro){
+        const termo = filtro.toLowerCase();
+        container.innerHTML='';
+        cadastros.forEach((prof,index)=>{
+          const textoBusca = [prof.nome,prof.disciplina,prof.email,prof.tipo].filter(Boolean).join(' ').toLowerCase();
+          const disponib   = Array.isArray(prof.disponibilidades)
+                               ? prof.disponibilidades.map(d=>`${d.dia} às ${d.horario}`).join(' ').toLowerCase()
+                               : String(prof.disponibilidades||'').toLowerCase();
+          if(textoBusca.includes(termo) || disponib.includes(termo)) criarCard(prof,index);
+        });
+      }
+
+      filtroInput.addEventListener('input', e=>aplicarFiltro(e.target.value));
+      aplicarFiltro(''); // inicial
+    });
+  </script>
+</body>
+</html>

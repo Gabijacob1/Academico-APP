@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="visualizar_frequencia.css" />
+  <title>Visualizar Frequência - Aluno</title>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">Acadêmico App 🌿</div>
+    <nav class="menu">
+      <ul>
+        <li><a href="aluno.html">Início</a></li>
+      </ul>
+    </nav>
+    <div class="menu-toggle" id="menu-toggle">&#9776;</div>
+  </header>
+
+  <h1>Visualizar Frequência - Aluno</h1>
+
+  <form id="formConsulta">
+    <label for="cursoSelect">Selecione o curso:</label>
+    <select id="cursoSelect" required>
+      <option value="" disabled selected>-- Escolha o curso --</option>
+      <option value="Ensino Médio">Ensino Médio</option>
+      <option value="Pré Vestibulinho">Pré Vestibulinho</option>
+      <option value="Pré Vestibular">Pré Vestibular</option>
+      <option value="Empreendedorismo">Empreendedorismo</option>
+    </select>
+
+    <label for="alunoSelect">Selecione seu nome:</label>
+    <select id="alunoSelect" required disabled>
+      <option value="" disabled selected>-- Escolha seu nome --</option>
+    </select>
+
+    <center><button type="submit">Verificar Frequência</button></center>
+  </form>
+
+  <div id="resultado" class="info-container" style="display:none; margin-top:2rem;">
+    <div><strong>Curso:</strong> <span id="cursoResultado"></span></div>
+    <div><strong>Tema do Plano:</strong> <span id="temaResultado"></span></div>
+    <div id="frequenciaTotalCurso" style="margin-top:1rem; font-weight:700;">
+      Frequência Total no Curso: <span id="frequenciaPorcentagemResultado"></span>
+    </div>
+    <div id="faltasAluno" style="margin-top:1rem; display:none;">
+      <strong style="color:#c0392b;">Faltas registradas:</strong>
+      <ul id="listaFaltas" style="margin-top:0.5rem; padding-left:1.2rem;"></ul>
+    </div>
+  </div>
+
+  <script>
+    const cursoSelect = document.getElementById('cursoSelect');
+    const alunoSelect = document.getElementById('alunoSelect');
+    const formConsulta = document.getElementById('formConsulta');
+
+    const resultadoDiv = document.getElementById('resultado');
+    const cursoResultado = document.getElementById('cursoResultado');
+    const temaResultado = document.getElementById('temaResultado');
+    const frequenciaPorcentagemResultado = document.getElementById('frequenciaPorcentagemResultado');
+    const frequenciaTotalCursoDiv = document.getElementById('frequenciaTotalCurso');
+    const faltasDiv = document.getElementById('faltasAluno');
+    const listaFaltas = document.getElementById('listaFaltas');
+
+    const alunos = [
+      "Ana Silva", "Bruno Souza", "Carla Dias", "Diego Lima", "Elisa Fernandes",
+      "Fábio Oliveira", "Gisele Martins", "Hugo Costa", "Isabela Rocha", "João Pedro",
+      "Karina Almeida", "Lucas Moreira", "Mariana Pinto", "Nicolas Santos", "Olívia Ramos"
+    ];
+
+    cursoSelect.addEventListener('change', () => {
+      const curso = cursoSelect.value;
+      alunoSelect.innerHTML = '<option value="" disabled selected>-- Escolha seu nome --</option>';
+      alunoSelect.disabled = true;
+      resultadoDiv.style.display = 'none';
+      faltasDiv.style.display = 'none';
+
+      if (!curso) return;
+
+      alunos.forEach(aluno => {
+        const option = document.createElement('option');
+        option.value = aluno;
+        option.textContent = aluno;
+        alunoSelect.appendChild(option);
+      });
+
+      alunoSelect.disabled = false;
+    });
+
+    formConsulta.addEventListener('submit', e => {
+      e.preventDefault();
+      resultadoDiv.style.display = 'none';
+      faltasDiv.style.display = 'none';
+
+      const curso = cursoSelect.value;
+      const aluno = alunoSelect.value;
+
+      if (!curso || !aluno) {
+        alert('Por favor, selecione o curso e seu nome.');
+        return;
+      }
+
+      const planosSalvos = JSON.parse(localStorage.getItem("planos")) || [];
+      const planosCurso = planosSalvos
+        .filter(p => p.turma === curso)
+        .sort((a, b) => new Date(b.data) - new Date(a.data)); // pega o mais recente
+
+      const planoMaisRecente = planosCurso[0];
+
+      cursoResultado.textContent = curso;
+      temaResultado.textContent = planoMaisRecente ? planoMaisRecente.tema : "Sem plano registrado";
+
+      const freqTotal = calcularFrequenciaTotal(curso, aluno);
+      frequenciaPorcentagemResultado.textContent = freqTotal !== null ? `${freqTotal}%` : "Sem dados";
+      frequenciaTotalCursoDiv.style.color = (freqTotal !== null && freqTotal < 75) ? '#c0392b' : '#3a8a3a';
+
+      // Mostrar faltas
+      const faltas = listarFaltasAluno(curso, aluno);
+      listaFaltas.innerHTML = '';
+
+      // Função para converter string DD/MM/YYYY em objeto Date válido
+      function parseDataBrParaDate(dataStr) {
+        if (!dataStr) return null;
+        const partes = dataStr.split('/');
+        if (partes.length !== 3) return null;
+        const dia = parseInt(partes[0], 10);
+        const mes = parseInt(partes[1], 10) - 1; // meses zero-based
+        const ano = parseInt(partes[2], 10);
+        const data = new Date(ano, mes, dia);
+        if (data && data.getDate() === dia && data.getMonth() === mes && data.getFullYear() === ano) {
+          return data;
+        }
+        return null;
+      }
+
+      if (faltas.length > 0) {
+        faltas.forEach(dataFalta => {
+          // Debug - conferir valor da data antes de converter
+          // console.log("Data falta recebida:", dataFalta);
+
+          const dataObj = parseDataBrParaDate(dataFalta);
+          let dataFormatada = dataFalta;
+          if (dataObj) {
+            dataFormatada = dataObj.toLocaleDateString('pt-BR');
+          }
+          const item = document.createElement('li');
+          item.textContent = dataFormatada;
+          listaFaltas.appendChild(item);
+        });
+        faltasDiv.style.display = 'block';
+      }
+
+      resultadoDiv.style.display = 'block';
+    });
+
+    function calcularFrequenciaTotal(curso, aluno) {
+      const planosSalvos = JSON.parse(localStorage.getItem("planos")) || [];
+      const planosCurso = planosSalvos.filter(plano => plano.turma === curso);
+
+      if (planosCurso.length === 0) return null;
+
+      let totalAulas = planosCurso.length;
+      let presencas = 0;
+
+      planosCurso.forEach(plano => {
+        const chave = `frequencia_${curso}_${plano.tema}`;
+        const dados = JSON.parse(localStorage.getItem(chave)) || {};
+        if (dados.presencas && dados.presencas[aluno] !== undefined) {
+          if (dados.presencas[aluno]) presencas++;
+        } else {
+          totalAulas--;
+        }
+      });
+
+      if (totalAulas === 0) return null;
+
+      return Math.round((presencas / totalAulas) * 100);
+    }
+
+    function listarFaltasAluno(curso, aluno) {
+      const planosSalvos = JSON.parse(localStorage.getItem("planos")) || [];
+      const planosCurso = planosSalvos.filter(plano => plano.turma === curso);
+
+      const faltas = [];
+
+      planosCurso.forEach(plano => {
+        const chave = `frequencia_${curso}_${plano.tema}`;
+        const dados = JSON.parse(localStorage.getItem(chave)) || {};
+
+        if (dados.presencas && dados.presencas[aluno] === false) {
+          faltas.push(plano.data);
+        }
+      });
+
+      return faltas;
+    }
+  </script>
+</body>
+</html>

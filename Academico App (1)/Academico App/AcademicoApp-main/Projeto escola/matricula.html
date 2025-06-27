@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Matrículas</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="adicionar-avisos.css" />
+
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">Acadêmico App 🌿</div>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="secretaria.html">Início</a></li>
+      </ul>
+    </nav>
+    <div class="menu-toggle" id="menu-toggle">&#9776;</div>
+  </header>
+
+  <main>
+    <h1>Usuario cadastrados</h1>
+     <!-- Campo de busca -->
+  <input type="text" id="filtroInput" placeholder="Pesquisar por nome, curso ou período..." aria-label="Filtro de pesquisa" class="campo-pesquisa">
+
+    <div class="usuario-card-container" id="usuarioContainer"></div>
+  </main>
+
+  <button class="btn-add" onclick="window.location.href='adicionar-matricula.html'" aria-label="Adicionar aviso">+</button>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const container   = document.getElementById('usuarioContainer');
+  const filtroInput = document.getElementById('filtroInput');
+  const alunos      = JSON.parse(localStorage.getItem('alunos')) || [];
+
+  function salvarAlunos() {
+    localStorage.setItem('alunos', JSON.stringify(alunos));
+  }
+
+  function criarCard(aluno, index) {
+    const card = document.createElement('div');
+    card.classList.add('usuario-card');
+
+    const btnDelete = document.createElement('button');
+    btnDelete.classList.add('btn-delete');
+    btnDelete.innerHTML = '🗑️';
+    btnDelete.setAttribute('aria-label', 'Excluir matrícula');
+
+    const btnEdit = document.createElement('button');
+    btnEdit.classList.add('btn-edit');
+    btnEdit.innerHTML = '✏️';
+    btnEdit.setAttribute('aria-label', 'Editar matrícula');
+
+    btnDelete.onclick = () => {
+      if (confirm(`Excluir ${aluno.nome}?`)) {
+        alunos.splice(index, 1);
+        salvarAlunos();
+        aplicarFiltro(filtroInput.value);
+      }
+    };
+
+    btnEdit.onclick = () => {
+      localStorage.setItem('alunoEditando', JSON.stringify({ aluno, index }));
+      window.location.href = 'editar-login.html';
+    };
+
+    card.innerHTML = `
+      <h2>${aluno.nome} <span class="tipo">(${aluno.tipo})</span></h2>
+      <p><strong>Email:</strong> ${aluno.email}</p>
+      <p><strong>Senha:</strong> ${aluno.senha}</p>
+      <p><strong>Telefone:</strong> ${aluno.telefone}</p>
+    `;
+    card.appendChild(btnEdit);
+    card.appendChild(btnDelete);
+    container.appendChild(card);
+  }
+
+  function aplicarFiltro(filtro) {
+    const termo = filtro.toLowerCase();
+    container.innerHTML = '';
+    alunos.forEach((aluno, i) => {
+      if (
+        aluno.nome.toLowerCase().includes(termo) ||
+        aluno.tipo.toLowerCase().includes(termo)
+      ) {
+        criarCard(aluno, i);
+      }
+    });
+  }
+
+  filtroInput.oninput = e => aplicarFiltro(e.target.value);
+  aplicarFiltro('');
+});
+</script>
+
+
+</body>
+</html>
